@@ -8,7 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root{
-    --paper:#faf8f4;
+    --paper:#ffffff;
     --ink:#1c1a17;
     --ink-soft:#54504a;
     --line:#d8d2c6;
@@ -20,7 +20,7 @@
   body{
     margin:0;
     font-family: "Georgia", "Times New Roman", serif;
-    background: #efece5;
+    background: #ffffff;
     color:var(--ink);
   }
   header{
@@ -118,7 +118,7 @@
   .btn-bar{
     position:sticky;
     bottom:0;
-    background:linear-gradient(to top, #efece5 60%, transparent);
+    background:linear-gradient(to top, #ffffff 60%, transparent);
     padding:18px 0 6px;
     margin-top:20px;
   }
@@ -247,19 +247,18 @@
 <div class="wrap">
 
   <div class="section-title">Vendedor</div>
-  <div class="hint">Esses dados ficam salvos neste navegador — você só precisa preencher uma vez. <a href="#" id="limparVendedorSalvo" style="color:#a33;">Limpar dados salvos</a></div>
   <div class="field">
     <label>Nome completo</label>
-    <input type="text" id="vNome" placeholder="Ex: JOSE CARLOS DE FARIAS">
+    <input type="text" id="vNome">
   </div>
   <div class="row2">
     <div class="field">
       <label>RG</label>
-      <input type="text" id="vRg" placeholder="826.976">
+      <input type="text" id="vRg">
     </div>
     <div class="field">
       <label>CPF</label>
-      <input type="text" id="vCpf" placeholder="489.626.445-87">
+      <input type="text" id="vCpf">
     </div>
   </div>
   <div class="row2">
@@ -274,22 +273,22 @@
     </div>
     <div class="field">
       <label>Profissão</label>
-      <input type="text" id="vProfissao" placeholder="Aposentado">
+      <input type="text" id="vProfissao">
     </div>
   </div>
   <div class="field">
     <label>Residente e domiciliado em (cidade/UF)</label>
-    <input type="text" id="vCidade" placeholder="Lagarto/SE">
+    <input type="text" id="vCidade">
   </div>
 
   <div class="section-title">Comprador</div>
   <div class="field">
     <label>Nome completo</label>
-    <input type="text" id="cNome" placeholder="Ex: ERALDO NASCIMENTO DA SILVA">
+    <input type="text" id="cNome">
   </div>
   <div class="field">
     <label>CPF</label>
-    <input type="text" id="cCpf" placeholder="014.191.785-71">
+    <input type="text" id="cCpf">
   </div>
   <div class="toggle-row">
     <input type="checkbox" id="temConjuge">
@@ -298,52 +297,52 @@
   <div id="spouseFields">
     <div class="field">
       <label>Nome do(a) cônjuge</label>
-      <input type="text" id="conjNome" placeholder="JOSICLEIDE ANDRADE SANTANA SILVA">
+      <input type="text" id="conjNome">
     </div>
     <div class="field">
       <label>CPF do(a) cônjuge</label>
-      <input type="text" id="conjCpf" placeholder="035.528.925-32">
+      <input type="text" id="conjCpf">
     </div>
   </div>
   <div class="field">
     <label>Endereço (residentes e domiciliados em)</label>
-    <input type="text" id="cEndereco" placeholder="Rua Izolina Alves Santos, nº 288, Bairro Loiola, Lagarto/SE">
+    <input type="text" id="cEndereco">
   </div>
 
   <div class="section-title">Valor da venda</div>
   <div class="field">
     <label>Valor numérico</label>
-    <input type="text" id="valorNum" placeholder="Digite apenas os números, ex: 58000" inputmode="decimal">
+    <input type="text" id="valorNum" inputmode="decimal">
   </div>
   <div class="hint" id="extensoPreview">Valor por extenso: —</div>
 
   <div class="section-title">Imóvel</div>
   <div class="field">
     <label>Endereço do imóvel</label>
-    <input type="text" id="imovelEndereco" placeholder="Avenida Deijaniro Jonas, nº 1562, Bairro Laudelino Freire, em Lagarto/SE">
+    <input type="text" id="imovelEndereco">
   </div>
   <div class="field">
     <label>Inscrição imobiliária municipal</label>
-    <input type="text" id="inscricao" placeholder="09.01.005.61.0527.00.001">
+    <input type="text" id="inscricao">
   </div>
   <div class="row2">
     <div class="field">
       <label>Confrontação — Esquerda</label>
-      <input type="text" id="confEsq" placeholder="Herdeiros do Sr. José">
+      <input type="text" id="confEsq">
     </div>
     <div class="field">
       <label>Confrontação — Direita</label>
-      <input type="text" id="confDir" placeholder="Dona Rose">
+      <input type="text" id="confDir">
     </div>
   </div>
   <div class="row2">
     <div class="field">
       <label>Confrontação — Frente</label>
-      <input type="text" id="confFrente" placeholder="Rodovia">
+      <input type="text" id="confFrente">
     </div>
     <div class="field">
       <label>Confrontação — Fundo</label>
-      <input type="text" id="confFundo" placeholder="Terreno de proprietários desconhecidos">
+      <input type="text" id="confFundo">
     </div>
   </div>
 
@@ -356,7 +355,6 @@
     <label>Ano</label>
     <input type="text" id="dataAno" value="2026">
   </div>
-  <div class="hint">O dia e o mês ficam em branco (com linhas ____) para serem preenchidos à mão, como no modelo original.</div>
 
   <div class="btn-bar">
     <div class="btn-row">
@@ -406,6 +404,66 @@
 </div>
 
 <script>
+  // ---- Máscaras automáticas de CPF e RG (pontos e traço), robustas à digitação ----
+  // (usa o mesmo princípio do valor: guarda só os dígitos digitados num buffer e
+  // sempre reconstrói o texto exibido, para a formatação não atrapalhar a digitação)
+  function aplicarMascaraDigitos(inputEl, maxDigits, formatarFn){
+    let digits = '';
+    function render(){
+      inputEl.value = digits ? formatarFn(digits) : '';
+    }
+    inputEl.addEventListener('beforeinput', (e) => {
+      if (e.inputType === 'insertText' && e.data) {
+        const novos = e.data.replace(/\D/g, '');
+        if (novos) digits = (digits + novos).slice(0, maxDigits);
+        e.preventDefault();
+        render();
+        inputEl.dispatchEvent(new Event('change'));
+      } else if (e.inputType === 'deleteContentBackward' || e.inputType === 'deleteContentForward') {
+        digits = digits.slice(0, -1);
+        e.preventDefault();
+        render();
+        inputEl.dispatchEvent(new Event('change'));
+      } else if (e.inputType !== 'insertFromPaste') {
+        e.preventDefault();
+      }
+    });
+    inputEl.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const texto = (e.clipboardData || window.clipboardData).getData('text');
+      const novos = texto.replace(/\D/g, '');
+      if (novos) digits = (digits + novos).slice(0, maxDigits);
+      render();
+      inputEl.dispatchEvent(new Event('change'));
+    });
+    // permite definir/recarregar o valor programaticamente (ex.: dados salvos), mantendo a máscara em sincronia
+    inputEl._setDigits = (valor) => {
+      digits = (valor || '').replace(/\D/g, '').slice(0, maxDigits);
+      render();
+    };
+  }
+
+  function formatarCPF(d){
+    let r = d.slice(0, 3);
+    if (d.length > 3) r += '.' + d.slice(3, 6);
+    if (d.length > 6) r += '.' + d.slice(6, 9);
+    if (d.length > 9) r += '-' + d.slice(9, 11);
+    return r;
+  }
+
+  function formatarRG(d){
+    let r = d.slice(0, 3);
+    if (d.length > 3) r += '.' + d.slice(3, 6);
+    if (d.length > 6) r += '.' + d.slice(6, 9);
+    if (d.length > 9) r += d.slice(9, 10);
+    return r;
+  }
+
+  aplicarMascaraDigitos(document.getElementById('vRg'), 9, formatarRG);
+  aplicarMascaraDigitos(document.getElementById('vCpf'), 11, formatarCPF);
+  aplicarMascaraDigitos(document.getElementById('cCpf'), 11, formatarCPF);
+  aplicarMascaraDigitos(document.getElementById('conjCpf'), 11, formatarCPF);
+
   // ---- Dados do vendedor salvos no localStorage do navegador ----
   const CHAVE_VENDEDOR = 'contratoGerador_dadosVendedor';
   const CAMPOS_VENDEDOR = ['vNome', 'vRg', 'vCpf', 'vEstadoCivil', 'vProfissao', 'vCidade'];
@@ -431,7 +489,10 @@
     }
     if (!dados) return;
     CAMPOS_VENDEDOR.forEach(id => {
-      if (dados[id] !== undefined) document.getElementById(id).value = dados[id];
+      if (dados[id] === undefined) return;
+      const el = document.getElementById(id);
+      if (el._setDigits) el._setDigits(dados[id]);
+      else el.value = dados[id];
     });
   }
 
@@ -440,17 +501,6 @@
     const el = document.getElementById(id);
     el.addEventListener('input', salvarDadosVendedor);
     el.addEventListener('change', salvarDadosVendedor);
-  });
-
-  document.getElementById('limparVendedorSalvo').addEventListener('click', (e) => {
-    e.preventDefault();
-    if (!confirm('Deseja apagar os dados do vendedor salvos neste navegador?')) return;
-    localStorage.removeItem(CHAVE_VENDEDOR);
-    CAMPOS_VENDEDOR.forEach(id => {
-      const el = document.getElementById(id);
-      if (el.tagName === 'SELECT') el.selectedIndex = 0;
-      else el.value = '';
-    });
   });
 
   const temConjuge = document.getElementById('temConjuge');
@@ -643,7 +693,7 @@
     document.getElementById('out-valorTopo').textContent = `VALOR ${valorNum}`;
 
     document.getElementById('out-paragrafoVendedor').innerHTML =
-      `<span class="dropcap">D</span>IZ <b>${escapeHtml(vNome.toUpperCase())}</b>, RG n° ${escapeHtml(vRg)}, CPF n° <b>${escapeHtml(vCpf)}</b>, brasileiro, capaz, ${escapeHtml(vEstadoCivil)}, ${escapeHtml(vProfissao)}, residente e domiciliado em, <b>${escapeHtml(vCidade)}</b>;`;
+      `<span class="dropcap">D</span>IZ <b>${escapeHtml(vNome.toUpperCase())}</b>, RG n° <b>${escapeHtml(vRg)}</b>, CPF n° <b>${escapeHtml(vCpf)}</b>, brasileiro, capaz, ${escapeHtml(vEstadoCivil)}, ${escapeHtml(vProfissao)}, residente e domiciliado em, <b>${escapeHtml(vCidade)}</b>;`;
 
     let paragrafoComprador = `Que recebeu de, <b>${escapeHtml(cNome.toUpperCase())}</b>, CPF n° <b>${escapeHtml(cCpf)}</b>, brasileiro, capaz`;
     if (temConjuge.checked) {
@@ -740,9 +790,14 @@
     }
   }
 
-  // só mostra o botão em navegadores/celulares que suportam compartilhar arquivos
+  // em navegadores/celulares que suportam compartilhar arquivo, mostra só o botão
+  // "Compartilhar" (esconde o "Gerar PDF"); no computador, mantém só o "Gerar PDF"
   if (suportaCompartilharArquivo()) {
     compartilharBtn.style.display = 'block';
+    compartilharBtn.style.background = 'var(--accent)';
+    compartilharBtn.style.color = '#fff';
+    compartilharBtn.style.border = 'none';
+    document.getElementById('gerarBtn').style.display = 'none';
   }
 
   compartilharBtn.addEventListener('click', async () => {
