@@ -459,10 +459,23 @@
     return r;
   }
 
+  function formatarInscricao(d){
+    const grupos = [2, 2, 3, 2, 4, 2, 3]; // padrão 09.01.005.61.0527.00.001
+    const partes = [];
+    let idx = 0;
+    for (const tamanho of grupos) {
+      if (idx >= d.length) break;
+      partes.push(d.slice(idx, idx + tamanho));
+      idx += tamanho;
+    }
+    return partes.join('.');
+  }
+
   aplicarMascaraDigitos(document.getElementById('vRg'), 9, formatarRG);
   aplicarMascaraDigitos(document.getElementById('vCpf'), 11, formatarCPF);
   aplicarMascaraDigitos(document.getElementById('cCpf'), 11, formatarCPF);
   aplicarMascaraDigitos(document.getElementById('conjCpf'), 11, formatarCPF);
+  aplicarMascaraDigitos(document.getElementById('inscricao'), 18, formatarInscricao);
 
   // ---- Dados do vendedor salvos no localStorage do navegador ----
   const CHAVE_VENDEDOR = 'contratoGerador_dadosVendedor';
@@ -704,11 +717,11 @@
     } else {
       paragrafoComprador += `, residente e domiciliado na <b>${escapeHtml(cEndereco)}</b>`;
     }
-    paragrafoComprador += `; a importância de <b>${escapeHtml(valorPrefixo)}</b> ${escapeHtml(valorResto)} (${escapeHtml(valorExtenso)}).`;
+    paragrafoComprador += `; a importância de <b>${escapeHtml(valorPrefixo)} ${escapeHtml(valorResto)}</b> (${escapeHtml(valorExtenso)}).`;
     document.getElementById('out-paragrafoComprador').innerHTML = paragrafoComprador;
 
     document.getElementById('out-paragrafoImovel').innerHTML =
-      `Valor total do preço da venda que lhe fez de <b>uma casa situada na</b> ${enderecoImovelHTML(imovelEndereco)}, com <b>inscrição imobiliária municipal</b> n° ${escapeHtml(inscricao)}; limitando-se da maneira seguinte:`;
+      `Valor total do preço da venda que lhe fez de <b>uma casa situada na</b> ${enderecoImovelHTML(imovelEndereco)}, com <b>inscrição imobiliária municipal</b> n° <b>${escapeHtml(inscricao)}</b>; limitando-se da maneira seguinte:`;
 
     document.getElementById('out-confEsq').textContent = confEsq;
     document.getElementById('out-confDir').textContent = confDir;
