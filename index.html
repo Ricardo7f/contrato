@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gerador de Contrato Particular de Compra e Venda</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --paper:#faf8f4;
+    --ink:#1c1a17;
+    --ink-soft:#54504a;
+    --line:#d8d2c6;
+    --accent:#7a3b2e;
+    --accent-soft:#efe3d8;
+    --field-bg:#ffffff;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    font-family: "Georgia", "Times New Roman", serif;
+    background: #efece5;
+    color:var(--ink);
+  }
+  header{
+    padding:28px 20px 18px;
+    text-align:center;
+    border-bottom:1px solid var(--line);
+    background:var(--paper);
+  }
+  header h1{
+    margin:0 0 6px;
+    font-size:1.4rem;
+    letter-spacing:.02em;
+    font-weight:600;
+  }
+  header p{
+    margin:0;
+    color:var(--ink-soft);
+    font-size:.92rem;
+    font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+  }
+  .wrap{
+    max-width:640px;
+    margin:0 auto;
+    padding:20px 16px 60px;
+  }
+  .section-title{
+    font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+    font-size:.78rem;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--accent);
+    font-weight:600;
+    margin:28px 0 10px;
+    padding-bottom:6px;
+    border-bottom:1px solid var(--line);
+  }
+  .section-title:first-of-type{ margin-top:6px; }
+  .field{
+    margin-bottom:12px;
+  }
+  .field label{
+    display:block;
+    font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+    font-size:.8rem;
+    color:var(--ink-soft);
+    margin-bottom:4px;
+  }
+  .field input,
+  .field select{
+    width:100%;
+    padding:10px 11px;
+    font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+    font-size:.95rem;
+    border:1px solid var(--line);
+    border-radius:6px;
+    background:var(--field-bg);
+    color:var(--ink);
+  }
+  .field input:focus,
+  .field select:focus{
+    outline:none;
+    border-color:var(--accent);
+  }
+  .row2{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  .row3{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:10px;
+  }
+  @media (max-width:480px){
+    .row2, .row3{ grid-template-columns:1fr; }
+  }
+  .hint{
+    font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+    font-size:.76rem;
+    color:#8a847a;
+    margin-top:-6px;
+    margin-bottom:14px;
+  }
+  .toggle-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+    font-size:.86rem;
+    color:var(--ink-soft);
+    margin:8px 0 14px;
+  }
+  .toggle-row input{ width:auto; }
+  #spouseFields{ display:none; }
+  .btn-bar{
+    position:sticky;
+    bottom:0;
+    background:linear-gradient(to top, #efece5 60%, transparent);
+    padding:18px 0 6px;
+    margin-top:20px;
+  }
+  .btn-row{
+    display:flex;
+    gap:10px;
+  }
+  button#gerarBtn, button#compartilharBtn{
+    flex:1;
+    padding:15px;
+    font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+    font-size:1rem;
+    font-weight:600;
+    letter-spacing:.01em;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+  }
+  button#gerarBtn{
+    background:var(--accent);
+    color:#fff;
+  }
+  button#compartilharBtn{
+    background:#fff;
+    color:var(--accent);
+    border:1.5px solid var(--accent);
+    display:none; /* só aparece se o navegador suportar compartilhamento de arquivos */
+  }
+  button#gerarBtn:active, button#compartilharBtn:active{ opacity:.85; }
+  button#gerarBtn:disabled, button#compartilharBtn:disabled{ opacity:.6; }
+  #status{
+    text-align:center;
+    font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+    font-size:.82rem;
+    color:var(--ink-soft);
+    margin-top:8px;
+    min-height:1em;
+  }
+
+  /* ---- Área de impressão (modelo do contrato, fiel ao original datilografado) ---- */
+  #printArea{
+    position:absolute;
+    left:-99999px;
+    top:0;
+    width:816px; /* 8.5in @96dpi */
+    padding:56px 78px;
+    background:#ffffff;
+    color:#000;
+    font-family:"Courier New", Courier, monospace;
+    font-size:14px;
+    line-height:1.55;
+  }
+  #printArea .titulo-wrap{
+    text-align:center;
+    margin:0 0 20px;
+  }
+  #printArea h1{
+    display:inline-block;
+    text-align:center;
+    font-size:19px;
+    font-weight:bold;
+    letter-spacing:.02em;
+    margin:0;
+    padding-bottom:5px;
+    border-bottom:1.6px solid #000;
+  }
+  #printArea .valor-topo{
+    text-align:right;
+    font-size:14px;
+    font-weight:bold;
+    margin:0 0 20px;
+  }
+  #printArea p{
+    text-align:justify;
+    margin:0 0 12px;
+  }
+  #printArea p b{ font-weight:bold; }
+  #printArea .dropcap{
+    font-size:1.55em;
+    font-weight:bold;
+    line-height:0;
+    vertical-align:-0.06em;
+  }
+  #printArea .confront{
+    margin:0 0 12px;
+  }
+  #printArea .confront b{ font-weight:bold; }
+  #printArea .confront-block{ margin-bottom:12px; }
+  #printArea .data-linha{
+    text-align:right;
+    margin:24px 0 20px;
+  }
+  #printArea .assinatura-linha{
+    display:flex;
+    margin:0 0 24px;
+  }
+  #printArea .assinatura-label{
+    min-width:150px;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  #printArea .assinatura-underline{
+    flex:1 1 auto;
+    border-bottom:1.4px solid #000;
+    margin-bottom:4px;
+  }
+  #printArea .assinatura-underline.linha-vendedor{
+    flex:none;
+    width:72%;
+  }
+  #printArea .blank-inline{
+    display:inline-block;
+    border-bottom:1.4px solid #000;
+    vertical-align:-3px;
+    margin:0 2px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Gerador de Contrato de Compra e Venda</h1>
+  <p>Preencha os dados abaixo e gere o PDF pronto para assinatura</p>
+</header>
+
+<div class="wrap">
+
+  <div class="section-title">Vendedor</div>
+  <div class="hint">Esses dados ficam salvos neste navegador — você só precisa preencher uma vez. <a href="#" id="limparVendedorSalvo" style="color:#a33;">Limpar dados salvos</a></div>
+  <div class="field">
+    <label>Nome completo</label>
+    <input type="text" id="vNome" placeholder="Ex: JOSE CARLOS DE FARIAS">
+  </div>
+  <div class="row2">
+    <div class="field">
+      <label>RG</label>
+      <input type="text" id="vRg" placeholder="826.976">
+    </div>
+    <div class="field">
+      <label>CPF</label>
+      <input type="text" id="vCpf" placeholder="489.626.445-87">
+    </div>
+  </div>
+  <div class="row2">
+    <div class="field">
+      <label>Estado civil</label>
+      <select id="vEstadoCivil">
+        <option value="solteiro">Solteiro</option>
+        <option value="casado">Casado</option>
+        <option value="divorciado" selected>Divorciado</option>
+        <option value="viúvo">Viúvo</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Profissão</label>
+      <input type="text" id="vProfissao" placeholder="Aposentado">
+    </div>
+  </div>
+  <div class="field">
+    <label>Residente e domiciliado em (cidade/UF)</label>
+    <input type="text" id="vCidade" placeholder="Lagarto/SE">
+  </div>
+
+  <div class="section-title">Comprador</div>
+  <div class="field">
+    <label>Nome completo</label>
+    <input type="text" id="cNome" placeholder="Ex: ERALDO NASCIMENTO DA SILVA">
+  </div>
+  <div class="field">
+    <label>CPF</label>
+    <input type="text" id="cCpf" placeholder="014.191.785-71">
+  </div>
+  <div class="toggle-row">
+    <input type="checkbox" id="temConjuge">
+    <label for="temConjuge" style="margin:0;">Comprador(a) é casado(a) — incluir cônjuge</label>
+  </div>
+  <div id="spouseFields">
+    <div class="field">
+      <label>Nome do(a) cônjuge</label>
+      <input type="text" id="conjNome" placeholder="JOSICLEIDE ANDRADE SANTANA SILVA">
+    </div>
+    <div class="field">
+      <label>CPF do(a) cônjuge</label>
+      <input type="text" id="conjCpf" placeholder="035.528.925-32">
+    </div>
+  </div>
+  <div class="field">
+    <label>Endereço (residentes e domiciliados em)</label>
+    <input type="text" id="cEndereco" placeholder="Rua Izolina Alves Santos, nº 288, Bairro Loiola, Lagarto/SE">
+  </div>
+
+  <div class="section-title">Valor da venda</div>
+  <div class="field">
+    <label>Valor numérico</label>
+    <input type="text" id="valorNum" placeholder="Digite apenas os números, ex: 58000" inputmode="decimal">
+  </div>
+  <div class="hint" id="extensoPreview">Valor por extenso: —</div>
+
+  <div class="section-title">Imóvel</div>
+  <div class="field">
+    <label>Endereço do imóvel</label>
+    <input type="text" id="imovelEndereco" placeholder="Avenida Deijaniro Jonas, nº 1562, Bairro Laudelino Freire, em Lagarto/SE">
+  </div>
+  <div class="field">
+    <label>Inscrição imobiliária municipal</label>
+    <input type="text" id="inscricao" placeholder="09.01.005.61.0527.00.001">
+  </div>
+  <div class="row2">
+    <div class="field">
+      <label>Confrontação — Esquerda</label>
+      <input type="text" id="confEsq" placeholder="Herdeiros do Sr. José">
+    </div>
+    <div class="field">
+      <label>Confrontação — Direita</label>
+      <input type="text" id="confDir" placeholder="Dona Rose">
+    </div>
+  </div>
+  <div class="row2">
+    <div class="field">
+      <label>Confrontação — Frente</label>
+      <input type="text" id="confFrente" placeholder="Rodovia">
+    </div>
+    <div class="field">
+      <label>Confrontação — Fundo</label>
+      <input type="text" id="confFundo" placeholder="Terreno de proprietários desconhecidos">
+    </div>
+  </div>
+
+  <div class="section-title">Data do contrato</div>
+  <div class="field">
+    <label>Cidade/UF</label>
+    <input type="text" id="dataCidade" value="Lagarto/SE">
+  </div>
+  <div class="field">
+    <label>Ano</label>
+    <input type="text" id="dataAno" value="2026">
+  </div>
+  <div class="hint">O dia e o mês ficam em branco (com linhas ____) para serem preenchidos à mão, como no modelo original.</div>
+
+  <div class="btn-bar">
+    <div class="btn-row">
+      <button id="gerarBtn">Gerar PDF</button>
+      <button id="compartilharBtn">Compartilhar</button>
+    </div>
+    <div id="status"></div>
+  </div>
+</div>
+
+<!-- Modelo fiel ao contrato original, preenchido dinamicamente -->
+<div id="printArea">
+  <div class="titulo-wrap"><h1>CONTRATO PARTICULAR DE COMPRA E VENDA</h1></div>
+  <div class="valor-topo" id="out-valorTopo">VALOR R$ 58.000,00</div>
+
+  <p id="out-paragrafoVendedor"></p>
+  <p id="out-paragrafoComprador"></p>
+  <p id="out-paragrafoImovel"></p>
+
+  <div class="confront-block">
+    <p class="confront"><b>Esquerda:</b> <span id="out-confEsq"></span></p>
+    <p class="confront"><b>Direita:</b> <span id="out-confDir"></span></p>
+    <p class="confront"><b>Frente:</b> <span id="out-confFrente"></span></p>
+    <p class="confront"><b>Fundo:</b> <span id="out-confFundo"></span></p>
+  </div>
+
+  <p>O(s) vendedor(es) transfere(m) ao comprador(a) todos os direitos e ações que exercia(m) sobre o bem ora vendido, podendo o mesmo comprador(a) usar, gozar da melhor forma que achar conveniente ficando sub-rogado(a) em todos os direitos de posse para efeito de requerer usucapião em seu nome. Esta venda é quitada, irrevogável e irretratável, não podendo haver arrependimento. O presente contrato se estende também aos herdeiros ou sucessores de ambas as partes, no caso de falecimento de alguma delas. A legalização do bem ora vendido, fica sobre a exclusiva responsabilidade do comprador(a). Por este foi dito que aceita o presente documento como está redigido, por isso que vai devidamente assinado, inclusive por duas testemunhas.</p>
+
+  <p class="data-linha" id="out-dataLinha"></p>
+
+  <div class="assinatura-linha"><span class="assinatura-label">VENDEDOR :</span></div>
+  <div class="assinatura-linha"><span class="assinatura-underline linha-vendedor"></span></div>
+
+  <div class="assinatura-linha">
+    <span class="assinatura-label">COMPRADOR (A):</span>
+    <span class="assinatura-underline"></span>
+  </div>
+
+  <div class="assinatura-linha">
+    <span class="assinatura-label">TESTEMUNHAS:</span>
+    <span class="assinatura-underline"></span>
+  </div>
+  <div class="assinatura-linha">
+    <span class="assinatura-label"></span>
+    <span class="assinatura-underline"></span>
+  </div>
+</div>
+
+<script>
+  // ---- Dados do vendedor salvos no localStorage do navegador ----
+  const CHAVE_VENDEDOR = 'contratoGerador_dadosVendedor';
+  const CAMPOS_VENDEDOR = ['vNome', 'vRg', 'vCpf', 'vEstadoCivil', 'vProfissao', 'vCidade'];
+
+  function salvarDadosVendedor(){
+    const dados = {};
+    CAMPOS_VENDEDOR.forEach(id => {
+      dados[id] = document.getElementById(id).value;
+    });
+    try {
+      localStorage.setItem(CHAVE_VENDEDOR, JSON.stringify(dados));
+    } catch (e) {
+      console.warn('Não foi possível salvar os dados do vendedor no localStorage:', e);
+    }
+  }
+
+  function carregarDadosVendedor(){
+    let dados = null;
+    try {
+      dados = JSON.parse(localStorage.getItem(CHAVE_VENDEDOR) || 'null');
+    } catch (e) {
+      dados = null;
+    }
+    if (!dados) return;
+    CAMPOS_VENDEDOR.forEach(id => {
+      if (dados[id] !== undefined) document.getElementById(id).value = dados[id];
+    });
+  }
+
+  carregarDadosVendedor();
+  CAMPOS_VENDEDOR.forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('input', salvarDadosVendedor);
+    el.addEventListener('change', salvarDadosVendedor);
+  });
+
+  document.getElementById('limparVendedorSalvo').addEventListener('click', (e) => {
+    e.preventDefault();
+    if (!confirm('Deseja apagar os dados do vendedor salvos neste navegador?')) return;
+    localStorage.removeItem(CHAVE_VENDEDOR);
+    CAMPOS_VENDEDOR.forEach(id => {
+      const el = document.getElementById(id);
+      if (el.tagName === 'SELECT') el.selectedIndex = 0;
+      else el.value = '';
+    });
+  });
+
+  const temConjuge = document.getElementById('temConjuge');
+  const spouseFields = document.getElementById('spouseFields');
+  temConjuge.addEventListener('change', () => {
+    spouseFields.style.display = temConjuge.checked ? 'block' : 'none';
+  });
+
+  function val(id){
+    return document.getElementById(id).value.trim();
+  }
+
+  // ---- Conversão de valor numérico para extenso (Real brasileiro) ----
+  const UNIDADES = ['zero','um','dois','três','quatro','cinco','seis','sete','oito','nove'];
+  const DEZ_A_DEZENOVE = ['dez','onze','doze','treze','quatorze','quinze','dezesseis','dezessete','dezoito','dezenove'];
+  const DEZENAS = ['','','vinte','trinta','quarenta','cinquenta','sessenta','setenta','oitenta','noventa'];
+  const CENTENAS = ['','cento','duzentos','trezentos','quatrocentos','quinhentos','seiscentos','setecentos','oitocentos','novecentos'];
+
+  function centenaPorExtenso(n){
+    if (n === 0) return '';
+    if (n === 100) return 'cem';
+    const c = Math.floor(n / 100);
+    const resto = n % 100;
+    const partes = [];
+    if (c > 0) partes.push(CENTENAS[c]);
+    if (resto > 0) {
+      if (resto < 10) partes.push(UNIDADES[resto]);
+      else if (resto < 20) partes.push(DEZ_A_DEZENOVE[resto - 10]);
+      else {
+        const d = Math.floor(resto / 10);
+        const u = resto % 10;
+        partes.push(u > 0 ? `${DEZENAS[d]} e ${UNIDADES[u]}` : DEZENAS[d]);
+      }
+    }
+    return partes.join(' e ');
+  }
+
+  function inteiroPorExtenso(n){
+    if (n === 0) return 'zero';
+    const milhao = Math.floor(n / 1000000);
+    const resto1 = n % 1000000;
+    const milhar = Math.floor(resto1 / 1000);
+    const centena = resto1 % 1000;
+
+    const partes = [];
+    if (milhao > 0) {
+      let milhaoTxt = milhao === 1 ? 'um milhão' : `${centenaPorExtenso(milhao)} milhões`;
+      if (milhar === 0 && centena === 0) milhaoTxt += ' de';
+      partes.push(milhaoTxt);
+    }
+    if (milhar > 0) partes.push(milhar === 1 ? 'mil' : `${centenaPorExtenso(milhar)} mil`);
+    if (centena > 0) partes.push(centenaPorExtenso(centena));
+
+    if (partes.length === 1) return partes[0];
+    const last = partes[partes.length - 1];
+    const head = partes.slice(0, -1);
+    // usa "e" antes do último grupo quando ele é menor que 100 ou é uma centena "redonda"
+    const usaE = centena > 0 && (centena < 100 || centena % 100 === 0);
+    return usaE ? `${head.join(', ')} e ${last}` : partes.join(', ');
+  }
+
+  function parseValorBRL(str){
+    const limpo = str.replace(/[^\d,.-]/g, '').trim();
+    if (!limpo) return null;
+    const partes = limpo.split(',');
+    const inteiro = parseInt((partes[0] || '0').replace(/\./g, ''), 10) || 0;
+    const centavos = partes[1] ? parseInt(partes[1].padEnd(2, '0').slice(0, 2), 10) : 0;
+    return { inteiro, centavos };
+  }
+
+  function valorPorExtenso(str){
+    const parsed = parseValorBRL(str);
+    if (!parsed) return null;
+    const { inteiro, centavos } = parsed;
+    if (inteiro === 0 && centavos === 0) return 'zero reais';
+    let texto = '';
+    if (inteiro > 0) {
+      texto += inteiroPorExtenso(inteiro) + (inteiro === 1 ? ' real' : ' reais');
+    }
+    if (centavos > 0) {
+      if (inteiro > 0) texto += ' e ';
+      texto += inteiroPorExtenso(centavos) + (centavos === 1 ? ' centavo' : ' centavos');
+    }
+    return texto;
+  }
+
+  function atualizarPreviewExtenso(){
+    const texto = valorPorExtenso(val('valorNum'));
+    document.getElementById('extensoPreview').textContent =
+      'Valor por extenso: ' + (texto || '—');
+  }
+
+  // ---- Máscara automática de moeda: sempre "R$ 0.000,00" ----
+  // Mantém um buffer só com os dígitos digitados (valor em reais) e sempre
+  // reconstrói o texto exibido, evitando que a formatação (R$ . ,) atrapalhe
+  // a digitação seguinte.
+  const valorNumInput = document.getElementById('valorNum');
+  let valorDigits = '';
+
+  function renderValorMoeda(){
+    if (!valorDigits) { valorNumInput.value = ''; return; }
+    const semZeros = valorDigits.replace(/^0+(?=\d)/, '');
+    const formatado = semZeros.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    valorNumInput.value = `R$ ${formatado},00`;
+  }
+
+  valorNumInput.addEventListener('beforeinput', (e) => {
+    if (e.inputType === 'insertText' && e.data) {
+      if (/\d/.test(e.data)) valorDigits += e.data;
+      e.preventDefault();
+      renderValorMoeda();
+      atualizarPreviewExtenso();
+    } else if (e.inputType === 'deleteContentBackward' || e.inputType === 'deleteContentForward') {
+      valorDigits = valorDigits.slice(0, -1);
+      e.preventDefault();
+      renderValorMoeda();
+      atualizarPreviewExtenso();
+    } else if (e.inputType !== 'insertFromPaste') {
+      e.preventDefault();
+    }
+  });
+
+  valorNumInput.addEventListener('paste', (e) => {
+    e.preventDefault();
+    const texto = (e.clipboardData || window.clipboardData).getData('text');
+    valorDigits += texto.replace(/\D/g, '');
+    renderValorMoeda();
+    atualizarPreviewExtenso();
+  });
+
+  // ---- Capitalização automática (Nome Próprio), independente de como foi digitado ----
+  const MANTER_MINUSCULO = new Set(['a','o','as','os','de','da','do','das','dos','e','em','na','no','nas','nos','ao','aos','à','às','ou','com','sem','para','por','nº','n°']);
+  function capitalizarTexto(str){
+    if (!str) return str;
+    return str.split(/(\s+)/).map(token => {
+      if (token === '' || /^\s+$/.test(token)) return token;
+      const segmentos = token.split('/');
+      return segmentos.map((parte, i) => {
+        if (!parte) return parte;
+        const chave = parte.toLocaleLowerCase('pt-BR');
+        if (MANTER_MINUSCULO.has(chave)) return chave;
+        if (/^\d/.test(parte)) return parte;
+        // sigla de UF: só maiuscula um trecho curto quando ele vem depois de "/" (ex.: Lagarto/SE)
+        if (i > 0 && parte.length <= 2 && /^[a-zà-úçãõâêô]+$/i.test(parte)) return parte.toLocaleUpperCase('pt-BR');
+        return parte.charAt(0).toLocaleUpperCase('pt-BR') + parte.slice(1).toLocaleLowerCase('pt-BR');
+      }).join('/');
+    }).join('');
+  }
+
+  function montarConteudo(){
+    const vNome = val('vNome') || '—';
+    const vRg = val('vRg') || '—';
+    const vCpf = val('vCpf') || '—';
+    const vEstadoCivil = document.getElementById('vEstadoCivil').value;
+    const vProfissao = val('vProfissao') || '—';
+    const vCidade = capitalizarTexto(val('vCidade')) || '—';
+
+    const cNome = val('cNome') || '—';
+    const cCpf = val('cCpf') || '—';
+    const cEndereco = capitalizarTexto(val('cEndereco')) || '—';
+
+    const valorNum = val('valorNum') || 'R$ —';
+    const valorExtenso = valorPorExtenso(valorNum) || '—';
+
+    const imovelEndereco = capitalizarTexto(val('imovelEndereco')) || '—';
+    const inscricao = val('inscricao') || '—';
+
+    const confEsq = capitalizarTexto(val('confEsq')) || '—';
+    const confDir = capitalizarTexto(val('confDir')) || '—';
+    const confFrente = capitalizarTexto(val('confFrente')) || '—';
+    const confFundo = capitalizarTexto(val('confFundo')) || '—';
+
+    const dataCidade = capitalizarTexto(val('dataCidade')) || 'Lagarto/SE';
+    const dataAno = val('dataAno') || '2026';
+
+    // separa o "R$" do valor numérico para negritar apenas o prefixo, como no original
+    const valorMatch = valorNum.match(/^(R\$)\s*(.*)$/i);
+    const valorPrefixo = valorMatch ? valorMatch[1].toUpperCase() : '';
+    const valorResto = valorMatch ? valorMatch[2] : valorNum;
+
+    // tudo que for digitado nos campos de endereço fica em negrito, igual ao original
+    function enderecoImovelHTML(endereco){
+      return `<b>${escapeHtml(endereco)}</b>`;
+    }
+
+    function escapeHtml(str){
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    document.getElementById('out-valorTopo').textContent = `VALOR ${valorNum}`;
+
+    document.getElementById('out-paragrafoVendedor').innerHTML =
+      `<span class="dropcap">D</span>IZ <b>${escapeHtml(vNome.toUpperCase())}</b>, RG n° ${escapeHtml(vRg)}, CPF n° <b>${escapeHtml(vCpf)}</b>, brasileiro, capaz, ${escapeHtml(vEstadoCivil)}, ${escapeHtml(vProfissao)}, residente e domiciliado em, <b>${escapeHtml(vCidade)}</b>;`;
+
+    let paragrafoComprador = `Que recebeu de, <b>${escapeHtml(cNome.toUpperCase())}</b>, CPF n° <b>${escapeHtml(cCpf)}</b>, brasileiro, capaz`;
+    if (temConjuge.checked) {
+      const conjNome = val('conjNome') || '—';
+      const conjCpf = val('conjCpf') || '—';
+      paragrafoComprador += `, casado com <b>${escapeHtml(conjNome.toUpperCase())}</b>, CPF n° <b>${escapeHtml(conjCpf)}</b>`;
+      paragrafoComprador += `, residentes e domiciliados na <b>${escapeHtml(cEndereco)}</b>`;
+    } else {
+      paragrafoComprador += `, residente e domiciliado na <b>${escapeHtml(cEndereco)}</b>`;
+    }
+    paragrafoComprador += `; a importância de <b>${escapeHtml(valorPrefixo)}</b> ${escapeHtml(valorResto)} (${escapeHtml(valorExtenso)}).`;
+    document.getElementById('out-paragrafoComprador').innerHTML = paragrafoComprador;
+
+    document.getElementById('out-paragrafoImovel').innerHTML =
+      `Valor total do preço da venda que lhe fez de <b>uma casa situada na</b> ${enderecoImovelHTML(imovelEndereco)}, com <b>inscrição imobiliária municipal</b> n° ${escapeHtml(inscricao)}; limitando-se da maneira seguinte:`;
+
+    document.getElementById('out-confEsq').textContent = confEsq;
+    document.getElementById('out-confDir').textContent = confDir;
+    document.getElementById('out-confFrente').textContent = confFrente;
+    document.getElementById('out-confFundo').textContent = confFundo;
+
+    document.getElementById('out-dataLinha').innerHTML =
+      `${escapeHtml(dataCidade.toUpperCase())}, <span class="blank-inline" style="width:55px;"></span> DE <span class="blank-inline" style="width:170px;"></span> DE ${escapeHtml(dataAno)}.`;
+  }
+
+  // Gera o PDF a partir do #printArea e devolve { pdf, nomeArquivo }, sem baixar nem compartilhar.
+  async function gerarPdf(){
+    montarConteudo();
+
+    // dá um tick para o DOM atualizar antes de capturar
+    await new Promise(r => setTimeout(r, 50));
+
+    const printArea = document.getElementById('printArea');
+    const canvas = await html2canvas(printArea, {
+      scale: 2,
+      backgroundColor: '#ffffff',
+      windowWidth: printArea.scrollWidth,
+      windowHeight: printArea.scrollHeight
+    });
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ unit: 'pt', format: 'letter' });
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    let imgWidth = pageWidth;
+    let imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+    // garante sempre 1 única página: se o conteúdo for mais alto que a página,
+    // reduz a escala mantendo a proporção, em vez de criar uma 2ª página
+    if (imgHeight > pageHeight) {
+      const escala = pageHeight / imgHeight;
+      imgHeight = pageHeight;
+      imgWidth = imgWidth * escala;
+    }
+
+    const x = (pageWidth - imgWidth) / 2;
+    const y = 0;
+    pdf.addImage(imgData, 'JPEG', x, y, imgWidth, imgHeight);
+
+    const nomeArquivo = `Contrato_Compra_e_Venda_${(val('cNome')||'comprador').replace(/\s+/g,'_')}.pdf`;
+    return { pdf, nomeArquivo };
+  }
+
+  document.getElementById('gerarBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('gerarBtn');
+    const status = document.getElementById('status');
+    btn.disabled = true;
+    status.textContent = 'Gerando PDF...';
+
+    try {
+      const { pdf, nomeArquivo } = await gerarPdf();
+      pdf.save(nomeArquivo);
+      status.textContent = 'PDF gerado com sucesso.';
+    } catch (err) {
+      console.error(err);
+      status.textContent = 'Erro ao gerar o PDF. Tente novamente.';
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // ---- Compartilhar direto para outros apps (WhatsApp, e-mail, etc.), via Web Share API ----
+  const compartilharBtn = document.getElementById('compartilharBtn');
+
+  function suportaCompartilharArquivo(){
+    if (!navigator.share || !navigator.canShare) return false;
+    try {
+      const arquivoTeste = new File(['teste'], 'teste.pdf', { type: 'application/pdf' });
+      return navigator.canShare({ files: [arquivoTeste] });
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // só mostra o botão em navegadores/celulares que suportam compartilhar arquivos
+  if (suportaCompartilharArquivo()) {
+    compartilharBtn.style.display = 'block';
+  }
+
+  compartilharBtn.addEventListener('click', async () => {
+    const status = document.getElementById('status');
+    compartilharBtn.disabled = true;
+    status.textContent = 'Preparando para compartilhar...';
+
+    try {
+      const { pdf, nomeArquivo } = await gerarPdf();
+      const blob = pdf.output('blob');
+      const arquivo = new File([blob], nomeArquivo, { type: 'application/pdf' });
+
+      if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
+        await navigator.share({
+          files: [arquivo],
+          title: 'Contrato Particular de Compra e Venda',
+          text: 'Segue o contrato em PDF.'
+        });
+        status.textContent = 'Compartilhado com sucesso.';
+      } else {
+        // fallback: se não der pra compartilhar arquivo, baixa o PDF normalmente
+        pdf.save(nomeArquivo);
+        status.textContent = 'Seu navegador não suporta compartilhar arquivos diretamente. O PDF foi baixado.';
+      }
+    } catch (err) {
+      if (err && err.name === 'AbortError') {
+        // usuário cancelou o compartilhamento, não é erro
+        status.textContent = '';
+      } else {
+        console.error(err);
+        status.textContent = 'Erro ao compartilhar o PDF. Tente novamente.';
+      }
+    } finally {
+      compartilharBtn.disabled = false;
+    }
+  });
+</script>
+
+</body>
+</html>
