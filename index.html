@@ -163,7 +163,7 @@
     position:absolute;
     left:-99999px;
     top:0;
-    width:816px; /* 8.5in @96dpi */
+    width:816px; /* largura de trabalho do canvas (o PDF final é redimensionado para A4) */
     padding:56px 78px;
     background:#ffffff;
     color:#000;
@@ -459,23 +459,10 @@
     return r;
   }
 
-  function formatarInscricao(d){
-    const grupos = [2, 2, 3, 2, 4, 2, 3]; // padrão 09.01.005.61.0527.00.001
-    const partes = [];
-    let idx = 0;
-    for (const tamanho of grupos) {
-      if (idx >= d.length) break;
-      partes.push(d.slice(idx, idx + tamanho));
-      idx += tamanho;
-    }
-    return partes.join('.');
-  }
-
   aplicarMascaraDigitos(document.getElementById('vRg'), 9, formatarRG);
   aplicarMascaraDigitos(document.getElementById('vCpf'), 11, formatarCPF);
   aplicarMascaraDigitos(document.getElementById('cCpf'), 11, formatarCPF);
   aplicarMascaraDigitos(document.getElementById('conjCpf'), 11, formatarCPF);
-  aplicarMascaraDigitos(document.getElementById('inscricao'), 18, formatarInscricao);
 
   // ---- Dados do vendedor salvos no localStorage do navegador ----
   const CHAVE_VENDEDOR = 'contratoGerador_dadosVendedor';
@@ -732,12 +719,38 @@
       `${escapeHtml(dataCidade.toUpperCase())}, <span class="blank-inline" style="width:55px;"></span> DE <span class="blank-inline" style="width:170px;"></span> DE ${escapeHtml(dataAno)}.`;
   }
 
+  // Aproveita o espaço em branco que sobra até o fim da página A4, distribuindo-o
+  // como espaçamento extra entre as linhas de assinatura (fica mais fácil de assinar à mão).
+  function ajustarEspacamentoAssinatura(){
+    const printArea = document.getElementById('printArea');
+    const linhas = printArea.querySelectorAll('.assinatura-linha');
+
+    // restaura o espaçamento padrão antes de medir, para o cálculo não acumular de gerações anteriores
+    linhas.forEach(l => { l.style.marginBottom = ''; });
+
+    const largura = printArea.clientWidth;
+    const alturaEquivalenteA4 = largura * (297 / 210); // altura de 1 página A4 nessa largura de trabalho
+    const margemSeguranca = 40; // px de folga para não colar no limite da página
+    const espacoDisponivel = alturaEquivalenteA4 - margemSeguranca - printArea.scrollHeight;
+
+    if (espacoDisponivel > 0 && linhas.length > 0) {
+      const maximoExtra = 260; // não deixa os espaços enormes se o texto for muito curto
+      const extra = Math.min(espacoDisponivel, maximoExtra) / linhas.length;
+      linhas.forEach(l => {
+        const atual = parseFloat(getComputedStyle(l).marginBottom) || 0;
+        l.style.marginBottom = (atual + extra) + 'px';
+      });
+    }
+  }
+
   // Gera o PDF a partir do #printArea e devolve { pdf, nomeArquivo }, sem baixar nem compartilhar.
   async function gerarPdf(){
     montarConteudo();
 
     // dá um tick para o DOM atualizar antes de capturar
     await new Promise(r => setTimeout(r, 50));
+
+    ajustarEspacamentoAssinatura();
 
     const printArea = document.getElementById('printArea');
     const canvas = await html2canvas(printArea, {
@@ -748,7 +761,7 @@
     });
 
     const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ unit: 'pt', format: 'letter' });
+    const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
 
